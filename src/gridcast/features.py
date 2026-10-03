@@ -14,12 +14,13 @@ DB = os.environ["DATABASE_URL"]
 BE_HOLIDAYS = holidays.Belgium(years=range(2022, 2028))
 
 
-def build() -> pd.DataFrame:
-    engine = create_engine(DB)
-    df = pd.read_sql("select * from load_features order by ts", engine)
-    df["ts"] = pd.to_datetime(df["ts"], utc=True)
 
+def add_calendar(df: pd.DataFrame) -> pd.DataFrame:
+    """Add calendar features. Used by both training and serving."""
+    df = df.copy()
+    df["ts"] = pd.to_datetime(df["ts"], utc=True)
     local = df["ts"].dt.tz_convert("Europe/Brussels")
+
     df["hour"] = local.dt.hour + local.dt.minute / 60.0
     df["dow"] = local.dt.dayofweek
     df["month"] = local.dt.month
@@ -30,15 +31,21 @@ def build() -> pd.DataFrame:
         (df["is_weekend"] == 0) & (df["is_holiday"] == 0)
     ).astype(int)
 
-    # cyclical encodings: midnight must sit next to 23:45, not 24 hours away
     df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
     df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
     df["doy_sin"] = np.sin(2 * np.pi * df["doy"] / 365.25)
     df["doy_cos"] = np.cos(2 * np.pi * df["doy"] / 365.25)
+    return df
 
+
+def build() -> pd.DataFrame:
+    engine = create_engine(DB)
+    df = pd.read_sql("select * from load_features order by ts", engine)
+    df = add_calendar(df)
     return df.dropna(
         subset=["lag_14d", "roll_std_14d", "load_mw", "temp_c"]
     ).reset_index(drop=True)
+
 
 FEATURES = [
     "lag_2d", "lag_3d", "lag_7d", "lag_14d",

@@ -22,8 +22,36 @@ CITIES = [
 ]
 
 
+def _weighted_mean(blocks: list[dict]) -> pd.DataFrame:
+    """Combine per-city hourly temperature into one population-weighted series."""
+    if len(blocks) != len(CITIES):
+        print(f"ERROR: expected {len(CITIES)} locations, got {len(blocks)}",
+              file=sys.stderr)
+        sys.exit(1)
+
+    frames = []
+    for (name, _, _, _), block in zip(CITIES, blocks):
+        h = block["hourly"]
+        frames.append(
+            pd.DataFrame({"ts": h["time"], name: h["temperature_2m"]}).set_index("ts")
+        )
+    wide = pd.concat(frames, axis=1)
+
+    w = pd.Series({c[0]: c[3] for c in CITIES})
+    weighted_sum = (wide.fillna(0) * w).sum(axis=1)
+    weight_present = (wide.notna() * w).sum(axis=1)
+
+    out = pd.DataFrame({
+        "ts": pd.to_datetime(wide.index, utc=True),
+        "temp_c": (weighted_sum / weight_present.replace(0, pd.NA)).to_numpy(),
+    })
+    print(f"  {len(out)} hourly rows, {out['temp_c'].isna().sum()} missing, "
+          f"mean {out['temp_c'].mean():.1f} C")
+    return out.dropna(subset=["temp_c"]).reset_index(drop=True)
+
+
 def fetch(start: str, end: str) -> pd.DataFrame:
-    """One request for all cities. Returns a weighted national mean per hour."""
+    """Historical archive for a date range."""
     params = {
         "latitude": ",".join(str(c[1]) for c in CITIES),
         "longitude": ",".join(str(c[2]) for c in CITIES),
@@ -36,37 +64,7 @@ def fetch(start: str, end: str) -> pd.DataFrame:
         r = client.get(ARCHIVE, params=params)
         r.raise_for_status()
         payload = r.json()
-
-    # A multi-location request returns a list; a single location returns an object.
-    blocks = payload if isinstance(payload, list) else [payload]
-    if len(blocks) != len(CITIES):
-        print(f"ERROR: expected {len(CITIES)} locations, got {len(blocks)}",
-              file=sys.stderr)
-        sys.exit(1)
-
-    frames = []
-    for (name, _, _, weight), block in zip(CITIES, blocks):
-        h = block["hourly"]
-        s = pd.DataFrame({"ts": h["time"], name: h["temperature_2m"]}).set_index("ts")
-        frames.append(s * weight if False else s)
-
-    wide = pd.concat(frames, axis=1)
-    weights = {c[0]: c[3] for c in CITIES}
-    total = sum(weights.values())
-
-    # Weighted mean, ignoring any city with a missing reading for that hour.
-    w = pd.Series(weights)
-    present = wide.notna()
-    weighted_sum = (wide.fillna(0) * w).sum(axis=1)
-    weight_present = (present * w).sum(axis=1)
-    out = pd.DataFrame({
-        "ts": pd.to_datetime(wide.index, utc=True),
-        "temp_c": (weighted_sum / weight_present.replace(0, pd.NA)).to_numpy(),
-    })
-    print(f"  {len(out)} hourly rows, {out['temp_c'].isna().sum()} missing, "
-          f"mean {out['temp_c'].mean():.1f} C "
-          f"(weights sum {total:.2f})")
-    return out.dropna(subset=["temp_c"])
+    return _weighted_mean(payload if isinstance(payload, list) else [payload])
 
 
 def load(df: pd.DataFrame) -> int:
@@ -83,6 +81,37 @@ def load(df: pd.DataFrame) -> int:
             conn.execute(sql, rows[i : i + 5000])
     return len(rows)
 
+FORECAST = "https://api.open-meteo.com/v1/forecast"
+
+
+def fetch_forecast(days: int = 7) -> pd.DataFrame:
+    """Hourly temperature forecast for the coming days (no key required)."""
+    params = {
+        "latitude": ",".join(str(c[1]) for c in CITIES),
+        "longitude": ",".join(str(c[2]) for c in CITIES),
+        "hourly": "temperature_2m",
+        "forecast_days": days,
+        "past_days": 2,
+        "timezone": "UTC",
+    }
+    with httpx.Client(timeout=120) as client:
+        r = client.get(FORECAST, params=params)
+        r.raise_for_status()
+        payload = r.json()
+    return _weighted_mean(payload if isinstance(payload, list) else [payload])
+
+
+def load_forecast(df: pd.DataFrame) -> int:
+    engine = create_engine(DB)
+    sql = text("""
+        insert into weather_forecast (ts, temp_c)
+        values (:ts, :temp_c)
+        on conflict (ts) do update
+          set temp_c = excluded.temp_c, fetched_at = now()
+    """)
+    with engine.begin() as conn:
+        conn.execute(sql, df.to_dict("records"))
+    return len(df)
 
 if __name__ == "__main__":
     start = sys.argv[1] if len(sys.argv) > 1 else "2022-12-01"

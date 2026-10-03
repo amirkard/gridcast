@@ -11,6 +11,7 @@ dependencies = [
     "fastapi>=0.142.2",
     "holidays>=0.105",
     "httpx>=0.28.1",
+    "joblib>=1.6.0",
     "lightgbm>=4.7.0",
     "matplotlib>=3.11.2",
     "pandas>=3.0.6",

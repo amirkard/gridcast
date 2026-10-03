@@ -1,0 +1,39 @@
+{
+  "version": "lgbm-20261003",
+  "trained_at": "2026-10-03T02:03:54.256799+00:00",
+  "n_rows": 130206,
+  "train_start": "2023-01-15 00:00:00+00:00",
+  "train_end": "2026-10-02 08:00:00+00:00",
+  "features": [
+    "lag_2d",
+    "lag_3d",
+    "lag_7d",
+    "lag_14d",
+    "roll_mean_14d",
+    "roll_std_14d",
+    "temp_c",
+    "temp_24h_mean",
+    "hdd",
+    "cdd",
+    "hour_sin",
+    "hour_cos",
+    "doy_sin",
+    "doy_cos",
+    "dow",
+    "month",
+    "is_weekend",
+    "is_holiday",
+    "is_working_day"
+  ],
+  "params": {
+    "n_estimators": 600,
+    "learning_rate": 0.05,
+    "num_leaves": 63,
+    "min_child_samples": 40,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "verbose": -1
+  },
+  "backtest_mape": 3.22,
+  "baseline_mape": 3.35
+}
