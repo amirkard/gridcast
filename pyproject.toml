@@ -9,11 +9,16 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.142.2",
+    "holidays>=0.105",
     "httpx>=0.28.1",
+    "lightgbm>=4.7.0",
+    "matplotlib>=3.11.2",
     "pandas>=3.0.6",
     "psycopg[binary]>=3.3.6",
     "pydantic>=2.13.5",
     "python-dotenv>=1.2.4",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.18.1",
     "sqlalchemy>=2.1.2",
     "uvicorn[standard]>=0.54.0",
 ]
