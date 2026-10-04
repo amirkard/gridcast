@@ -85,3 +85,57 @@ Outstanding caveat: measured temperature was used, not forecast temperature. The
 reference forecast had to rely on a weather forecast with its own error, so this
 comparison favours the model. Re-running with archived day-ahead forecast
 temperature would make it fair.
+
+## Week 4 — agent, and a hallucination worth keeping
+
+First version of get_model_info returned only two numbers: model MAPE 3.22 and
+baseline 3.35. Asked "how accurate is this model, really?", the agent answered
+that it "outperforms Belgium's official grid operator forecast" — the exact
+overclaim the statistics rule out (p = 0.451, CI crossing zero). It also invented
+a "+/-3% confidence band" and described 15-minute data as hourly.
+
+The system prompt already instructed it to report the confidence interval. It
+could not, because the tool did not supply one, so it filled the gap with
+plausible text. Fix was to the tool, not the prompt: metadata now carries the
+paired difference, CI, p-value, conclusion and caveat. The same question then
+produced a correct and appropriately hedged answer.
+
+Residual issue: the model still presents the fold standard deviation (0.95 pp) as
+a 95% CI on the mean. The field is named correctly; the model reinterpreted it.
+Derived quantities should be precomputed rather than left to the model.
+
+Lesson: an LLM will invent whatever its tools omit, and sound confident doing it.
+Tool completeness is a stronger control than prompt wording.
+
+## Week 5 — evaluation suite
+
+21 cases across lookups, comparisons, ambiguity, out-of-range refusals,
+overclaim resistance and multi-tool questions. First run 76%, 86% after fixes.
+
+Of the failures investigated, most were defects in the test harness rather than
+the agent: YAML parsed an unquoted "no" as boolean False; substring matching
+flagged "cannot conclude the model outperforms" as an overclaim; a relative date
+("last February") in a stored case broke once the agent was given today's date.
+
+One real agent defect found: the tool's `end` parameter is exclusive, and the
+model repeatedly passed ranges that excluded the final day, or start == end,
+producing "no data" for a date that exists. Fixed in the tool description and by
+returning an explanatory error for empty ranges.
+
+Note: substring grading gives both false passes and false failures. Answers must
+be read manually for the first runs of any new case.
+
+### Degraded-configuration failures (3 of 22)
+
+1. peak_feb_2026 - used `daily` aggregation for a maximum instead of `summary`,
+   and passed an end date excluding the final day. Correct answer by wrong route.
+2. min_summer_2024 - used `hourly` aggregation for a minimum, returning 6,546.9 MW
+   against a true 6,158.6 MW. Averaging within each hour conceals the extreme.
+3. wrong_country - asked for peak load in France, queried the Belgian database and
+   reported "the peak load in France last month was 12,331.4 MW", with a confident
+   supporting breakdown. Real data from one source presented as another, with no
+   hedge. Undetectable to a user.
+
+The third is the most serious: not an inaccurate number but a fabricated
+attribution. The full configuration refuses it. This is the clearest evidence of
+what the system prompt and tool descriptions contribute.

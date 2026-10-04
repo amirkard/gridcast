@@ -5,11 +5,10 @@ import sys
 
 import httpx
 import pandas as pd
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+from gridcast.db import get_engine
 
-load_dotenv()
-DB = os.environ["DATABASE_URL"]
+
 ARCHIVE = "https://archive-api.open-meteo.com/v1/archive"
 
 # City, latitude, longitude, weight (roughly proportional to population served)
@@ -68,7 +67,7 @@ def fetch(start: str, end: str) -> pd.DataFrame:
 
 
 def load(df: pd.DataFrame) -> int:
-    engine = create_engine(DB)
+    engine = get_engine()
     sql = text("""
         insert into weather_raw (ts, temp_c)
         values (:ts, :temp_c)
@@ -102,7 +101,7 @@ def fetch_forecast(days: int = 7) -> pd.DataFrame:
 
 
 def load_forecast(df: pd.DataFrame) -> int:
-    engine = create_engine(DB)
+    engine = get_engine()
     sql = text("""
         insert into weather_forecast (ts, temp_c)
         values (:ts, :temp_c)

@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "anthropic>=1.11.0",
     "fastapi>=0.142.2",
     "holidays>=0.105",
     "httpx>=0.28.1",
@@ -18,6 +19,7 @@ dependencies = [
     "psycopg[binary]>=3.3.6",
     "pydantic>=2.13.5",
     "python-dotenv>=1.2.4",
+    "pyyaml>=6.0.3",
     "scikit-learn>=1.9.1",
     "scipy>=1.18.1",
     "sqlalchemy>=2.1.2",
@@ -30,3 +32,8 @@ gridcast = "gridcast:main"
 [build-system]
 requires = ["uv_build>=0.12.21,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

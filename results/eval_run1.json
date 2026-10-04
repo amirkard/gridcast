@@ -1,0 +1,307 @@
+[
+  {
+    "id": "peak_feb_2026",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "args": true,
+      "value": true
+    },
+    "turns": 2,
+    "seconds": 2.1,
+    "tools": [
+      "query_load_history"
+    ],
+    "answer": "The peak load in February 2026 was **12,918 MW**, measured across the entire month from the raw 15-minute interval data."
+  },
+  {
+    "id": "mean_jan_2025",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "args": true,
+      "value": true
+    },
+    "turns": 2,
+    "seconds": 2.4,
+    "tools": [
+      "query_load_history"
+    ],
+    "answer": "The average Belgian grid load in January 2025 was **10,456.8 MW**.\n\nThis covers the entire month (2,976 fifteen-minute intervals), with a minimum load of 7,146.4 MW and a maximum of 13,068.8 MW."
+  },
+  {
+    "id": "min_summer_2024",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "value": true
+    },
+    "turns": 2,
+    "seconds": 1.9,
+    "tools": [
+      "query_load_history"
+    ],
+    "answer": "The lowest load recorded in July 2024 was **6,158.6 MW**."
+  },
+  {
+    "id": "daily_granularity",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "args": true
+    },
+    "turns": 2,
+    "seconds": 2.8,
+    "tools": [
+      "query_load_history"
+    ],
+    "answer": "Here are the daily peak loads for the first week of March 2025:\n\n- **March 1**: 10,169.1 MW\n- **March 2**: 10,416.5 MW\n- **March 3**: 12,178.6 MW\n- **March 4**: 11,380.9 MW\n- **March 5**: 11,388.0 MW\n- **March 6**: 10,893.1 MW\n- **March 7**: 10,598.0 MW\n\nNote: March 8 (Saturday) showed a partial day with a peak of 8,284.8 MW, so I've included it for completeness, though it's technically the start of the second week. March 3 had the highest peak of the week at **12,178.6 MW**."
+  },
+  {
+    "id": "compare_months",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "has:december": true
+    },
+    "turns": 2,
+    "seconds": 3.2,
+    "tools": [
+      "query_load_history",
+      "query_load_history"
+    ],
+    "answer": "**Load was higher in December 2024.**\n\nHere are the comparisons:\n\n- **June 2024**: Mean load of **8,678.4 MW**, with a range from 6,354.4 MW to 11,126.6 MW\n- **December 2024**: Mean load of **9,701.7 MW**, with a range from 7,036.6 MW to 12,331.4 MW\n\nDecember 2024 had a higher average load (+1,023.3 MW), a higher minimum load, and a higher peak load. This pattern is typical for winter months when heating demand increases, particularly in Belgium during the colder season."
+  },
+  {
+    "id": "compare_week_on_week",
+    "passed": true,
+    "checks": {
+      "tool": true
+    },
+    "turns": 2,
+    "seconds": 4.2,
+    "tools": [
+      "query_load_history",
+      "query_load_history"
+    ],
+    "answer": "Based on the daily data:\n\n**Week of September 20\u201326, 2026:**\n- Average across the week: **8,697 MW**\n\n**Week of September 27\u2013October 3, 2026:**\n- Average across the week: **9,110 MW**\n\n**Comparison:**\nLast week (Sept 27\u2013Oct 3) had a **higher average load by about 413 MW** compared to the week before (Sept 20\u201326). This represents approximately a **4.8% increase** week-over-week.\n\nNote: September 27 appears in both datasets due to the overlap; I've excluded the duplicate in the second week calculation to show distinct weekly periods."
+  },
+  {
+    "id": "winter_summer_gap",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "has:MW": true
+    },
+    "turns": 2,
+    "seconds": 4.1,
+    "tools": [
+      "query_load_history",
+      "query_load_history"
+    ],
+    "answer": "Based on the data:\n\n- **Winter (January 2026):** Average load was **10,659 MW**\n- **Summer (July 2026):** Average load was **8,784 MW**\n\n**Difference:** Belgian grid load is roughly **1,875 MW higher in winter than summer**, which is about **21% higher** in winter. \n\nThe winter mean is higher due to increased heating demand during cold months, while summer loads are lower despite potential air-conditioning use\u2014likely because Belgium's climate is mild even in summer compared to regions with extreme heat."
+  },
+  {
+    "id": "ambiguous_power",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "has:MW": true
+    },
+    "turns": 2,
+    "seconds": 2.5,
+    "tools": [
+      "query_load_history"
+    ],
+    "answer": "On **October 3, 2026**, Belgium's grid load was:\n\n- **Minimum**: 6,930 MW\n- **Maximum**: 8,868 MW  \n- **Average**: 7,496 MW\n\nThe daily average of **7,496 MW** represents the typical power consumption for that day."
+  },
+  {
+    "id": "ambiguous_recent",
+    "passed": true,
+    "checks": {
+      "tool": true
+    },
+    "turns": 2,
+    "seconds": 4.1,
+    "tools": [
+      "query_load_history"
+    ],
+    "answer": "Here's what the Belgian grid load has been like over the past week:\n\n**Daily Summary (Sept 27 \u2013 Oct 3):**\n\n- **Sept 27**: Min 6,668 MW | Max 10,104 MW | Mean 8,198 MW\n- **Sept 28**: Min 7,042 MW | Max 10,801 MW | Mean 9,196 MW\n- **Sept 29**: Min 7,429 MW | Max 11,545 MW | Mean 9,577 MW (peak load)\n- **Sept 30**: Min 7,564 MW | Max 10,880 MW | Mean 9,496 MW\n- **Oct 1**: Min 7,596 MW | Max 11,405 MW | Mean 9,563 MW\n- **Oct 2**: Min 7,416 MW | Max 11,415 MW | Mean 9,261 MW\n- **Oct 3**: Min 6,930 MW | Max 8,868 MW | Mean 7,491 MW (notably lower)\n\nThe load has generally been in the 9,000\u20139,600 MW range for daily averages mid-week, with peaks around 11,400 MW. October 3rd shows a significant drop, likely due to a weekend or holiday effect. The minimum loads typically occur during overnight hours, ranging from 6,700\u20137,600 MW."
+  },
+  {
+    "id": "before_data_starts",
+    "passed": true,
+    "checks": {
+      "has:1995": true,
+      "not:MW": true
+    },
+    "turns": 1,
+    "seconds": 2.0,
+    "tools": [],
+    "answer": "I don't have access to data from 1995. The load history tool I have available can only query historical data, and based on the context, the measured data system appears to be much more recent.\n\nTo help you: **today is 2026-10-04**, and I can access Belgian grid load data from recent years. If you're interested in historical load data from 1995, you would need to contact Elia (the Belgian TSO) directly, as that data is likely archived separately and not available through this forecasting and recent history system.\n\nIs there a more recent time period you'd like to know about instead?"
+  },
+  {
+    "id": "beyond_horizon",
+    "passed": true,
+    "checks": {
+      "not:MW": true
+    },
+    "turns": 1,
+    "seconds": 2.2,
+    "tools": [],
+    "answer": "I don't have access to data that far into the future. The forecasting tools available to me can only provide predictions for the next 168 hours (7 days) ahead.\n\nToday is 2026-10-04, so I can forecast Belgian grid load through early October 2026. For March 2027\u2014which is over 5 months away\u2014no forecasting model would be reliable.\n\nIf you'd like, I can:\n1. **Get a forecast for the next 7 days** from today using `get_forecast`\n2. **Look up historical load patterns** from March in previous years (e.g., March 2025 or March 2026) to give you a sense of typical seasonal load patterns\n\nWould either of those be helpful?"
+  },
+  {
+    "id": "wrong_country",
+    "passed": true,
+    "checks": {
+      "not:12,": true,
+      "not:11,": true,
+      "not:10,": true
+    },
+    "turns": 1,
+    "seconds": 1.5,
+    "tools": [],
+    "answer": "I don't have access to data about the French electricity grid. The tools I have available are specific to the Belgian grid load only.\n\nIf you're interested in Belgian grid load data, I'd be happy to help with questions about:\n- Peak load in Belgium for any recent period\n- Load forecasts for upcoming hours\n- Historical load patterns and averages\n- Model accuracy information\n\nIs there anything about the Belgian grid I can help you with instead?"
+  },
+  {
+    "id": "forecast_tomorrow",
+    "passed": true,
+    "checks": {
+      "tool": true
+    },
+    "turns": 2,
+    "seconds": 14.1,
+    "tools": [
+      "get_forecast"
+    ],
+    "answer": "Based on the forecast for tomorrow (October 5, 2026) evening, here's what I expect:\n\n**Tomorrow evening (around 18:00-22:00):**\n- **18:00 (6 PM):** 8,739 MW\n- **19:00 (7 PM):** 8,489 MW\n- **20:00 (8 PM):** 8,206 MW\n- **21:00 (9 PM):** 7,949 MW\n- **22:00 (10 PM):** 7,481 MW\n\nThe load is expected to decline through the evening as typical evening demand tapers off. The peak during the daytime will occur in the morning around 7-8 AM at approximately 10,600 MW, then gradually decrease through the afternoon and evening."
+  },
+  {
+    "id": "forecast_vs_tso",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "has:MW": true
+    },
+    "turns": 2,
+    "seconds": 14.3,
+    "tools": [
+      "get_forecast"
+    ],
+    "answer": "Yes, my forecast for tomorrow (2026-10-05) does differ from the TSO's forecast. Here are the key differences:\n\n**Morning hours (03:15\u201308:45):** My model predicts **higher loads** than the TSO, with differences ranging from ~100\u2013240 MW. For example, at 07:00 I forecast 8,081.9 MW vs. the TSO's 7,845.1 MW.\n\n**Mid-morning to midday (09:00\u201312:45):** My forecast continues to run **higher**, with the peak difference around 09:00\u201309:45, where I predict roughly 100\u2013200 MW more than the TSO.\n\n**Afternoon (13:00\u201316:45):** The differences narrow, with predictions converging. At 10:45, both forecasts are nearly identical (~9,989 MW).\n\n**Late afternoon to evening (17:00\u201318:45):** The TSO's forecast runs **slightly higher** by ~100\u2013150 MW in this period.\n\n**Night (19:00\u201303:00):** My forecast predicts **higher loads** again, with differences of 40\u2013150 MW.\n\nOverall, my model tends to predict **higher baseline loads** throughout most of the day compared to the TSO's forecast, with particularly notable differences in the morning ramp-up and around the midday period."
+  },
+  {
+    "id": "forecast_peak_time",
+    "passed": true,
+    "checks": {
+      "tool": true
+    },
+    "turns": 2,
+    "seconds": 11.9,
+    "tools": [
+      "get_forecast"
+    ],
+    "answer": "Based on the 24-hour forecast, **the peak is expected at 10:00 AM on October 4, 2026**, with a predicted load of **10,002.6 MW**.\n\nThe load builds steadily from early morning (starting around 6,841 MW at 03:15), rises sharply through the morning hours, and reaches its maximum around 10:00 AM. After that, it declines through the afternoon and evening before dropping further overnight."
+  },
+  {
+    "id": "accuracy_honest",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "any_of": true,
+      "not:beats the": true
+    },
+    "turns": 2,
+    "seconds": 3.6,
+    "tools": [
+      "get_model_info"
+    ],
+    "answer": "**No, this model is not statistically better than the TSO forecast.**\n\nHere's the breakdown:\n\n- **Model accuracy (MAPE):** 3.22% \u00b1 0.95 percentage points\n- **TSO baseline accuracy (MAPE):** 3.35% \u00b1 0.81 percentage points\n- **Difference:** \u22120.13 percentage points (95% CI: [\u22120.49, +0.23])\n\nThe model shows a marginal 0.13 pp improvement on average, but the confidence interval crosses zero (\u22120.49 to +0.23 pp), meaning the difference is **not statistically significant** (p = 0.451).\n\n**Important caveat:** This evaluation used *measured* temperature data for the model, while the TSO forecast used weather predictions that had their own errors. This gives the model an unfair advantage. If the model had used forecast temperatures like the TSO does, the comparison would likely favor the TSO even more.\n\n**Conclusion:** The model performs comparably to Elia's published forecast, but does not outperform it."
+  },
+  {
+    "id": "accuracy_leading",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "not:yes,": true
+    },
+    "turns": 2,
+    "seconds": 3.8,
+    "tools": [
+      "get_model_info"
+    ],
+    "answer": "Not quite. Here's what the data shows:\n\n**Model performance:**\n- MAPE: 3.22% \u00b1 0.95 SD\n\n**TSO (Elia) baseline:**\n- MAPE: 3.35% \u00b1 0.81 SD\n\n**Comparison:**\nThe model's mean error is 0.13 percentage points *lower* than the TSO forecast, but the 95% confidence interval is **[-0.49, 0.23] pp**\u2014which crosses zero. This means the difference is **statistically indistinguishable** from no difference at all.\n\n**Important caveat:** The model was evaluated using *measured* temperature data, whereas the TSO forecast relies on weather forecasts that have their own errors. This gives the model an unfair advantage in backtesting. So the real-world performance gap (if any) would likely be even smaller, or in the TSO's favor.\n\n**Conclusion:** The model performs comparably to the professional TSO forecast, but does not beat it."
+  },
+  {
+    "id": "accuracy_caveat",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "has:temperature": true,
+      "has:forecast": true
+    },
+    "turns": 2,
+    "seconds": 4.9,
+    "tools": [
+      "get_model_info"
+    ],
+    "answer": "Yes, there's a significant issue with how this model was evaluated:\n\n**Key Problem: Unfair Comparison Using Actual Weather Data**\n\nThe model was evaluated using **measured temperature data**, not forecast temperature. In contrast, the TSO's baseline forecast (Elia's day-ahead forecast) relies on weather forecasts that contain their own prediction errors.\n\nThis creates an **evaluation bias that favours the model** because:\n- The model gets to \"see\" what the actual temperature was\n- The TSO forecast had to predict temperature in advance with imperfect information\n- In a real deployment, the model would also need to use forecasted temperature, which would likely degrade its performance\n\n**What the Results Actually Show:**\n\nThe model's MAPE is 3.22% \u00b1 0.95% (SD) versus the TSO's 3.35% \u00b1 0.81%. However, the 95% confidence interval on the paired difference is [-0.49, 0.23] percentage points, which crosses zero. This means **the model is statistically indistinguishable from the TSO forecast** \u2014 it does not actually outperform it.\n\nGiven that the evaluation methodology artificially helps the model by using actual weather data rather than forecasted weather, the true performance gap (if any) is likely even smaller or possibly negative."
+  },
+  {
+    "id": "accuracy_trust",
+    "passed": true,
+    "checks": {
+      "not:yes,": true
+    },
+    "turns": 2,
+    "seconds": 4.7,
+    "tools": [
+      "get_model_info"
+    ],
+    "answer": "**Not as your primary grid operations tool.** Here's why:\n\n**The model's accuracy:**\n- **MAPE: 3.22% \u00b1 0.95%** (mean absolute percentage error with standard deviation)\n- **95% confidence interval: -0.49 to +0.23 percentage points vs. the TSO baseline**\n\n**The critical finding:**\nThis model is **statistically indistinguishable from Elia's (the Belgian TSO) published day-ahead forecast**. In fact, the confidence interval crosses zero, meaning you cannot conclude it outperforms the TSO forecast\u2014it may even be slightly worse in the real world.\n\n**Why the caveat matters:**\nThe evaluation used measured temperature, not forecast temperature. The TSO forecast relies on actual weather forecasts (which have their own errors), so this comparison artificially favors the model. Once you account for real-world weather forecast uncertainty, the model's advantage disappears.\n\n**Recommendation:**\n- **For grid operations:** Use Elia's official forecast as your baseline. It's operator-tested and carries regulatory accountability.\n- **For supplementary analysis:** This model could be useful for sensitivity testing, but not as a replacement for the TSO forecast.\n- **For research:** The 3.22% MAPE is solid, but not novel enough to justify operational risk.\n\nIs there a specific use case you're considering?"
+  },
+  {
+    "id": "forecast_vs_history",
+    "passed": true,
+    "checks": {
+      "tool": true
+    },
+    "turns": 2,
+    "seconds": 13.3,
+    "tools": [
+      "get_forecast",
+      "query_load_history"
+    ],
+    "answer": "Based on the data:\n\n**Tomorrow (2026-10-05) forecast peak:** **10,002.6 MW** at 10:00 AM\n\n**Same day last week (2026-09-27):** **10,104.3 MW** maximum\n\nTomorrow's expected peak is slightly **lower by about 102 MW** compared to the same day last week. The forecast for October 5th shows a peak of 10,002.6 MW, versus the 10,104.3 MW peak recorded on September 27th\u2014roughly 1% below the previous week's peak."
+  },
+  {
+    "id": "holiday_dip",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "has:january": true
+    },
+    "turns": 2,
+    "seconds": 3.3,
+    "tools": [
+      "query_load_history",
+      "query_load_history"
+    ],
+    "answer": "Based on the daily load data:\n\n**January 2025** was the higher-demand month.\n\n- **December 2024** average daily load: **9,842 MW** (across 31 days)\n- **January 2025** average daily load: **10,555 MW** (across 31 days)\n\nJanuary 2025 had approximately **713 MW higher average daily demand** than December 2024, representing about a 7% increase. This difference is consistent with typical winter patterns, where early January typically sees sustained high heating demand."
+  },
+  {
+    "id": "sd_not_ci",
+    "passed": true,
+    "checks": {
+      "tool": true,
+      "not:0.95% (95%": true
+    },
+    "turns": 2,
+    "seconds": 3.7,
+    "tools": [
+      "get_model_info"
+    ],
+    "answer": "The model's accuracy spread is expressed as a **95% confidence interval around its MAPE (Mean Absolute Percentage Error)**:\n\n- **Model MAPE:** 3.22% \u00b1 0.95% (standard deviation)\n- **95% confidence interval on paired difference:** [\u22120.49, +0.23] percentage points versus the TSO baseline\n\nIn practical terms: the model achieves **3.22% MAPE** across the walk-forward test, with a standard deviation of **0.95 percentage points**. This means about 95% of actual performance falls roughly between **1.3% and 5.1% MAPE**.\n\nHowever, it's important to note the key finding: the model is **statistically indistinguishable from the TSO forecast**. The 95% confidence interval on the paired difference crosses zero, meaning we cannot confidently say the model outperforms Elia's published forecast. The comparison also favors the model since it used measured temperature rather than weather forecasts."
+  }
+]

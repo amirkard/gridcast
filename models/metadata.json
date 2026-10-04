@@ -1,7 +1,8 @@
 {
   "version": "lgbm-20261003",
-  "trained_at": "2026-10-03T02:03:54.256799+00:00",
+  "trained_at": "2026-10-03T22:30:55.840494+00:00",
   "n_rows": 130206,
+  "resolution": "15 minutes",
   "train_start": "2023-01-15 00:00:00+00:00",
   "train_end": "2026-10-02 08:00:00+00:00",
   "features": [
@@ -34,6 +35,20 @@
     "colsample_bytree": 0.8,
     "verbose": -1
   },
-  "backtest_mape": 3.22,
-  "baseline_mape": 3.35
+  "evaluation": {
+    "method": "walk-forward, 24 folds of 14 days, expanding window",
+    "model_mape_pct": 3.22,
+    "model_mape_sd": 0.95,
+    "baseline": "Elia published day-ahead forecast",
+    "baseline_mape_pct": 3.35,
+    "baseline_mape_sd": 0.81,
+    "paired_difference_pp": -0.13,
+    "ci95_pp": [
+      -0.49,
+      0.23
+    ],
+    "p_value": 0.451,
+    "conclusion": "Statistically indistinguishable from the TSO forecast. The model does NOT outperform it: the 95% interval crosses zero.",
+    "caveat": "Measured temperature was used, not forecast temperature. The TSO forecast relied on a weather forecast with its own error, so this comparison favours the model."
+  }
 }

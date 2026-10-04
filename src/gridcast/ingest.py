@@ -6,15 +6,10 @@ from io import StringIO
 
 import httpx
 import pandas as pd
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+from gridcast.db import get_engine
 
-load_dotenv()
 
-DB = os.environ.get(
-    "DATABASE_URL",
-    "postgresql+psycopg://gridcast:gridcast@localhost:5432/gridcast",
-)
 BASE = "https://opendata.elia.be/api/explore/v2.1/catalog/datasets/ods001"
 
 # Candidate source columns, in order of preference, for each target column.
@@ -87,8 +82,7 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def load(df: pd.DataFrame) -> int:
-    """Insert rows. Re-running the same range updates instead of duplicating."""
-    engine = create_engine(DB)
+    engine = get_engine()
     sql = text(
         """
         insert into load_raw (ts, resolution, load_mw, forecast_da)

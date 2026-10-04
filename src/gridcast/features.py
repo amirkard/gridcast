@@ -5,11 +5,9 @@ import os
 import holidays
 import numpy as np
 import pandas as pd
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from gridcast.db import get_engine
 
-load_dotenv()
-DB = os.environ["DATABASE_URL"]
 
 BE_HOLIDAYS = holidays.Belgium(years=range(2022, 2028))
 
@@ -39,7 +37,7 @@ def add_calendar(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build() -> pd.DataFrame:
-    engine = create_engine(DB)
+    engine = get_engine()
     df = pd.read_sql("select * from load_features order by ts", engine)
     df = add_calendar(df)
     return df.dropna(

@@ -7,15 +7,14 @@ from gridcast.features import FEATURES, add_calendar
 
 import joblib
 import pandas as pd
-from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, text
-
+from gridcast.db import get_engine
 from gridcast.features import FEATURES
 
-load_dotenv()
-DB = os.environ["DATABASE_URL"]
+
+
 MODEL_DIR = Path("models")
 
 state: dict = {}
@@ -23,7 +22,7 @@ state: dict = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    state["engine"] = create_engine(DB, pool_pre_ping=True, pool_size=5)
+    state["engine"] = get_engine(pool_size=5)
     state["model"] = joblib.load(MODEL_DIR / "model.joblib")
     state["meta"] = json.loads((MODEL_DIR / "metadata.json").read_text())
     yield

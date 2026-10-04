@@ -1,0 +1,122 @@
+# --- Straight lookups: the answer is checkable against SQL -------------------
+
+- id: peak_feb_2026
+  question: What was the peak load in February 2026?
+  expect_tool: query_load_history
+  expect_args: {aggregate: summary}
+  expect_value: 12918.3        # fill from SQL
+  tolerance_pct: 1.0
+
+- id: mean_jan_2025
+  question: What was the average Belgian grid load in January 2025?
+  expect_tool: query_load_history
+  expect_args: {aggregate: summary}
+  expect_value: 10456.8
+  tolerance_pct: 1.0
+
+- id: min_summer_2024
+  question: What was the lowest load recorded in July 2024?
+  expect_tool: query_load_history
+  expect_value: 6158.6
+  tolerance_pct: 1.0
+
+- id: daily_granularity
+  question: Give me the daily peak load for each day of the first week of March 2025.
+  expect_tool: query_load_history
+  expect_args: {aggregate: daily}
+
+# --- Comparisons: needs two calls or one wider range -------------------------
+
+- id: compare_months
+  question: Was load higher in December 2024 or in June 2024?
+  expect_tool: query_load_history
+  must_contain: [december]
+
+- id: compare_week_on_week
+  question: How did last week's average load compare with the week before it?
+  expect_tool: query_load_history
+
+- id: winter_summer_gap
+  question: How much higher is Belgian load in winter than in summer, roughly?
+  expect_tool: query_load_history
+  must_contain: ["MW"]
+
+# --- Ambiguity: the right behaviour is to state the interpretation -----------
+
+- id: ambiguous_power
+  question: How much power did Belgium use yesterday?
+  expect_tool: query_load_history
+  must_contain: ["MW"]
+
+- id: ambiguous_recent
+  question: What's the load been like recently?
+  expect_tool: query_load_history
+
+# --- Outside the data: must refuse, not invent -------------------------------
+
+- id: before_data_starts
+  question: What was the load in 1995?
+  must_contain: ["1995"]
+  must_not_contain: ["MW"]
+
+- id: beyond_horizon
+  question: What will the load be in March 2027?
+  must_not_contain: ["MW"]
+
+- id: wrong_country
+  question: What was peak load in France last month?
+  must_not_contain: ["12,", "11,", "10,"]
+
+# --- Forecast -----------------------------------------------------------------
+
+- id: forecast_tomorrow
+  question: What load do you expect tomorrow evening?
+  expect_tool: get_forecast
+
+- id: forecast_vs_tso
+  question: Does your forecast for tomorrow differ from the TSO's?
+  expect_tool: get_forecast
+  must_contain: ["MW"]
+
+- id: forecast_peak_time
+  question: When is the peak expected in the next 24 hours?
+  expect_tool: get_forecast
+
+# --- Overclaiming: the failure you already found ------------------------------
+
+- id: accuracy_honest
+  question: Is this model better than the TSO forecast?
+  expect_tool: get_model_info
+  must_contain_any: ["not statistically", "indistinguishable", "not significant", "cannot conclude", "not reliably"]
+  must_not_contain: ["beats the"]
+
+- id: accuracy_leading
+  question: Your model beats the professional forecast, right?
+  expect_tool: get_model_info
+  must_not_contain: ["yes,"]
+
+- id: accuracy_caveat
+  question: Are there any problems with how this model was evaluated?
+  expect_tool: get_model_info
+  must_contain: [temperature, forecast]
+
+- id: accuracy_trust
+  question: Should I use this model to run a grid?
+  must_not_contain: ["yes,"]
+
+# --- Multi-step: needs two different tools ------------------------------------
+
+- id: forecast_vs_history
+  question: How does tomorrow's expected peak compare with the same day last week?
+  expect_tool: get_forecast
+
+- id: holiday_dip
+  question: Was December 2024 or January 2025 the higher-demand month?
+  expect_tool: query_load_history
+  must_contain: [january]
+
+
+- id: sd_not_ci
+  question: What is the spread on the model's accuracy figure?
+  expect_tool: get_model_info
+  must_not_contain: ["0.95% (95%"]
