@@ -1,6 +1,5 @@
 """Tools the agent can call. Each returns plain JSON-serialisable data."""
 
-from datetime import date
 
 import pandas as pd
 from sqlalchemy import text
@@ -109,9 +108,11 @@ def query_load_history(start: str, end: str, aggregate: str) -> dict:
 
 
 def get_forecast(hours: int) -> dict:
-    from gridcast.features import FEATURES, add_calendar
-    import joblib
     from pathlib import Path
+
+    import joblib
+
+    from gridcast.features import FEATURES, add_calendar
 
     hours = max(1, min(hours, 168))
     sql = "select * from forecast_features where ts > now() order by ts limit :n"

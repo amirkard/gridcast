@@ -1,19 +1,16 @@
 import json
-import os
 from contextlib import asynccontextmanager
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
-from gridcast.features import FEATURES, add_calendar
 
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
+
 from gridcast.db import get_engine
-from gridcast.features import FEATURES
-
-
+from gridcast.features import FEATURES, add_calendar
 
 MODEL_DIR = Path("models")
 
@@ -110,7 +107,7 @@ def forecast(hours: int = 24) -> ForecastResponse:
     preds = state["model"].predict(df[FEATURES])
     return ForecastResponse(
         model_version=state["meta"]["version"],
-        generated_at=datetime.now(),
+        generated_at=datetime.now(UTC),
         points=[
             ForecastPoint(
                 ts=row.ts,
@@ -119,6 +116,6 @@ def forecast(hours: int = 24) -> ForecastResponse:
                     None if pd.isna(row.forecast_da) else float(row.forecast_da)
                 ),
             )
-            for row, p in zip(df.itertuples(), preds)
+            for row, p in zip(df.itertuples(), preds, strict=True)
         ],
     )

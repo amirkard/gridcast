@@ -1,13 +1,12 @@
 """Ingest population-weighted Belgian temperature from the Open-Meteo archive."""
 
-import os
 import sys
 
 import httpx
 import pandas as pd
-from sqlalchemy import create_engine, text
-from gridcast.db import get_engine
+from sqlalchemy import text
 
+from gridcast.db import get_engine
 
 ARCHIVE = "https://archive-api.open-meteo.com/v1/archive"
 
@@ -29,7 +28,7 @@ def _weighted_mean(blocks: list[dict]) -> pd.DataFrame:
         sys.exit(1)
 
     frames = []
-    for (name, _, _, _), block in zip(CITIES, blocks):
+    for (name, _, _, _), block in zip(CITIES, blocks, strict=True):
         h = block["hourly"]
         frames.append(
             pd.DataFrame({"ts": h["time"], name: h["temperature_2m"]}).set_index("ts")

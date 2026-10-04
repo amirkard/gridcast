@@ -1,14 +1,13 @@
 """Ingest Belgian grid load from the Elia open data platform into PostgreSQL."""
 
-import os
 import sys
 from io import StringIO
 
 import httpx
 import pandas as pd
-from sqlalchemy import create_engine, text
-from gridcast.db import get_engine
+from sqlalchemy import text
 
+from gridcast.db import get_engine
 
 BASE = "https://opendata.elia.be/api/explore/v2.1/catalog/datasets/ods001"
 

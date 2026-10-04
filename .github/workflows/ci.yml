@@ -36,7 +36,7 @@ jobs:
       - run: uv sync --dev
 
       - name: Lint
-        run: uvx ruff check src/ tests/
+        run: uv run ruff check src/ tests/
 
       - name: Test
         run: uv run pytest tests/ -v

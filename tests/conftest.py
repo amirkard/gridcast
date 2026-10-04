@@ -16,7 +16,7 @@ def _already_loaded(conn) -> bool:
     try:
         n = conn.execute(text("select count(*) from load_raw")).scalar_one()
         return n > 0
-    except Exception:
+    except Exception:  # table may not exist yet
         return False
 
 

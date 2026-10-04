@@ -1,13 +1,11 @@
 """Build the model matrix from the SQL feature view."""
 
-import os
 
 import holidays
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine
-from gridcast.db import get_engine
 
+from gridcast.db import get_engine
 
 BE_HOLIDAYS = holidays.Belgium(years=range(2022, 2028))
 

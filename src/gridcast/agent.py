@@ -2,6 +2,7 @@
 
 import json
 import os
+from datetime import UTC, datetime
 
 import anthropic
 from dotenv import load_dotenv
@@ -12,8 +13,6 @@ load_dotenv()
 
 MODEL = "claude-haiku-4-5-20251001"
 MAX_TURNS = 6
-
-from datetime import date
 
 SYSTEM_TEMPLATE = """Today is {today}. You answer questions about Belgian
 electricity grid load using the tools provided. Measured data ends about 2 hours
@@ -50,7 +49,8 @@ def run(question: str, verbose: bool = True, degraded: bool = False) -> dict:
             for t in TOOLS
         ]
     else:
-        system = SYSTEM_TEMPLATE.format(today=date.today().isoformat())
+        today = datetime.now(UTC).date().isoformat()
+        system = SYSTEM_TEMPLATE.format(today=today)
         tools = TOOLS
 
     for turn in range(MAX_TURNS):
@@ -77,7 +77,7 @@ def run(question: str, verbose: bool = True, degraded: bool = False) -> dict:
             try:
                 out = DISPATCH[block.name](**block.input)
                 is_error = "error" in out
-            except Exception as e:
+            except Exception as e:  # tool errors are returned to the model
                 out, is_error = {"error": str(e)}, True
             results.append({
                 "type": "tool_result",

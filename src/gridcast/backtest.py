@@ -3,9 +3,9 @@
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
+from scipy import stats
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
-from scipy import stats
 
 from gridcast.features import FEATURES, build
 
@@ -78,11 +78,11 @@ def compare(res: pd.DataFrame, a: str, b: str) -> None:
     pa = res[res.model == a].set_index("fold")["mape"]
     pb = res[res.model == b].set_index("fold")["mape"]
     d = (pa - pb).dropna()
-    t, p = stats.ttest_rel(pa[d.index], pb[d.index])
+    _, p = stats.ttest_rel(pa[d.index], pb[d.index])
     lo, hi = stats.t.interval(0.95, len(d) - 1, d.mean(), stats.sem(d))
     print(f"{a} - {b}: mean diff {d.mean():+.2f} pp, "
           f"95% CI [{lo:+.2f}, {hi:+.2f}], p={p:.3f}")
-    
+
 if __name__ == "__main__":
     # in backtest.py, change the default
     res = run(n_folds=24, test_days=14)
