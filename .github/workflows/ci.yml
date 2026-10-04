@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gridcast
+          POSTGRES_PASSWORD: gridcast
+          POSTGRES_DB: gridcast
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+psycopg://gridcast:gridcast@localhost:5432/gridcast
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --dev
+
+      - name: Lint
+        run: uvx ruff check src/ tests/
+
+      - name: Test
+        run: uv run pytest tests/ -v
+
+      - name: Build image
+        run: docker build -t gridcast .
