@@ -42,8 +42,8 @@ def test_no_nan_strings_in_output():
 
 def test_summary_uses_raw_intervals_not_averages():
     """summary must see the true extremes; hourly averaging hides them."""
-    s = query_load_history("2024-07-01", "2024-08-01", "summary")["rows"][0]
-    h = query_load_history("2024-07-01", "2024-08-01", "hourly")["rows"]
+    s = query_load_history("2025-03-01", "2025-03-08", "summary")["rows"][0]
+    h = query_load_history("2025-03-01", "2025-03-08", "hourly")["rows"]
     assert s["min_mw"] <= min(r["mean_mw"] for r in h)
     assert s["max_mw"] >= max(r["mean_mw"] for r in h)
 
