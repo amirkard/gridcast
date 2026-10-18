@@ -1,10 +1,13 @@
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock README.md ./
+# Use the image's Python 3.14; never download a different one.
+ENV UV_PYTHON_DOWNLOADS=never
+
+COPY pyproject.toml uv.lock README.md .python-version ./
 COPY src/ ./src/
 
 RUN uv sync --frozen --no-dev
