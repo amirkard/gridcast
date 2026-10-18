@@ -68,6 +68,27 @@ Read the 100% with care: the cases were iterated against this agent, and several
 early failures were defects in the grader rather than the agent. The
 full-versus-degraded gap is the defensible measurement.
 
+## MCP server
+
+The same three tools are also exposed as a [Model Context
+Protocol](https://modelcontextprotocol.io) server, so any MCP client (Claude
+Code, Claude Desktop, an IDE) can query the grid data directly.
+
+There is one tool contract, not two. `gridcast.mcp_server` serves the schemas
+from `gridcast.tools.TOOLS` and dispatches to `gridcast.tools.DISPATCH`, the
+same objects the in-house agent and the evaluation suite use. A test asserts
+that the MCP listing and the agent's tool definitions are identical, so they
+cannot drift apart.
+
+Tool errors (an empty range, an invalid aggregate) reach the client with
+`isError` set, not as ordinary data. The tests cover the in-memory protocol
+path and a real stdio subprocess, as a desktop client would start it.
+
+```bash
+uv run python -m gridcast.mcp_server            # stdio transport
+claude mcp add gridcast -- uv run --directory "$PWD" python -m gridcast.mcp_server
+```
+
 ## Findings worth reading
 
 See [NOTES.md](NOTES.md). Two in particular:
@@ -87,7 +108,7 @@ distinction decides whether you drop rows or redefine what "latest" means.
 ## Stack
 
 Python · PostgreSQL · LightGBM · FastAPI · Docker · pytest · GitHub Actions ·
-Anthropic API
+Anthropic API · MCP
 
 ## Run it
 

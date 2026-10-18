@@ -31,6 +31,13 @@ def test_equal_dates_rejected():
     assert "error" in out
 
 
+def test_unknown_aggregate_rejected():
+    """Anything outside the enum once fell through to the hourly query."""
+    out = query_load_history(*KNOWN_RANGE, "weekly")
+    assert "error" in out
+    assert "rows" not in out
+
+
 def test_no_nan_strings_in_output():
     """astype(str) once turned NULL into the literal string 'nan'."""
     for aggregate in ("summary", "daily", "hourly"):

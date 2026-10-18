@@ -57,7 +57,12 @@ TOOLS = [
 ]
 
 
+AGGREGATES = ("hourly", "daily", "summary")
+
+
 def query_load_history(start: str, end: str, aggregate: str) -> dict:
+    if aggregate not in AGGREGATES:
+        return {"error": f"aggregate must be one of {', '.join(AGGREGATES)}, not {aggregate!r}"}
     if start == end:
         return {"error": "start and end are equal; end is exclusive, so this range is empty"}
     if aggregate == "summary":
