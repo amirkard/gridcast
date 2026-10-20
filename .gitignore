@@ -10,3 +10,7 @@ corpus/*
 !corpus/_sources.md
 !corpus/elia_load_definitions.md
 !corpus/grid_load_glossary.md
+
+# Local secrets for Azure (never commit)
+.env.*
+*.dump
