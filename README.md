@@ -116,6 +116,27 @@ title, page, and similarity score.
 
 The documents themselves are not committed; `corpus/_sources.md` lists them.
 
+## Deployment on Azure
+
+Infrastructure as code with Bicep, in `infra/`:
+
+- `database.bicep`: Azure Database for PostgreSQL (Flexible Server, version
+  16) with pgvector allowed, and a firewall that admits one client address and
+  Azure services.
+- `app.bicep`: the API on Azure Container Apps, scaling to zero when idle. Its
+  secrets (database URL, Anthropic API key, `/ask` token) live in Azure Key
+  Vault; the app reads them through a managed identity that has only the
+  "Key Vault Secrets User" role, so no secret value is stored in the app
+  definition.
+
+CI publishes the image to the GitHub Container Registry from master, but only
+after lint, tests, and a smoke test that starts the image and waits for
+`/health`. The smoke test exists because an image once built cleanly and then
+could not start: LightGBM needs `libgomp1`, which the slim base image lacks.
+
+The agent is reachable at `POST /ask` with an `X-Ask-Token` header, because
+every call costs LLM tokens.
+
 ## Findings worth reading
 
 See [NOTES.md](NOTES.md). Two in particular:
@@ -134,7 +155,8 @@ distinction decides whether you drop rows or redefine what "latest" means.
 
 ## Stack
 
-Python · PostgreSQL · pgvector · LightGBM · FastAPI · Docker · pytest · GitHub Actions ·
+Python · PostgreSQL · pgvector · LightGBM · FastAPI · Docker · Azure (Container Apps,
+Key Vault, PostgreSQL, Bicep) · pytest · GitHub Actions ·
 Anthropic API · MCP
 
 ## Run it

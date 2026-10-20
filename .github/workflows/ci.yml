@@ -47,7 +47,20 @@ jobs:
       - name: Build image
         run: docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} -t ghcr.io/${{ github.repository }}:latest .
 
-      # Publish only from master, after lint and tests have passed.
+      # Start the image and wait for /health. Building is not enough: the image
+      # once built fine but could not start, because a system library was missing.
+      - name: Smoke-test the image
+        run: |
+          docker run -d --name smoke --network host -e DATABASE_URL="$DATABASE_URL" \
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          for i in $(seq 1 30); do
+            if curl -sf localhost:8000/health; then exit 0; fi
+            sleep 2
+          done
+          docker logs smoke
+          exit 1
+
+      # Publish only from master, after lint, tests, and the smoke test have passed.
       - name: Publish image to GitHub Container Registry
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: |
