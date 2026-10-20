@@ -6,7 +6,14 @@ from sqlalchemy import text
 
 from gridcast.db import get_engine
 from gridcast.embeddings import DIM
-from gridcast.ingest_docs import find_files, ingest_document, prune, read_document, to_pgvector
+from gridcast.ingest_docs import (
+    find_files,
+    ingest_document,
+    pdf_title,
+    prune,
+    read_document,
+    to_pgvector,
+)
 
 SOURCE = "test://ingest.md"
 LONG_TEXT = "\n\n".join(f"Paragraph {i} about measured grid load. " * 12 for i in range(10))
@@ -110,3 +117,18 @@ def test_prune_removes_documents_no_longer_in_the_library():
             tx.rollback()
     assert removed > 0
     assert left == 0
+
+
+def test_markdown_without_level_one_heading_uses_file_name(tmp_path: Path):
+    doc = tmp_path / "NOTES.md"
+    doc.write_text("### Publication lag\n\nBody text.\n", encoding="utf-8")
+    assert read_document(doc)[0] == "NOTES.md"
+
+
+def test_word_processor_pdf_title_is_replaced_by_file_name():
+    path = Path("corpus/Load_and_Consumption_Data.pdf")
+    assert pdf_title("Microsoft Word - ENTSO-E_Draft.docx", path) == "Load and Consumption Data"
+    assert pdf_title(None, path) == "Load and Consumption Data"
+    assert pdf_title("Load and Consumption Data: Definitions", path) == (
+        "Load and Consumption Data: Definitions"
+    )

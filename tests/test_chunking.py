@@ -5,7 +5,7 @@ from itertools import pairwise
 
 import pytest
 
-from gridcast.chunking import is_informative, split_text
+from gridcast.chunking import is_informative, split_text, strip_number_runs
 
 WORDS = ["grid", "load", "Belgium", "forecast.", "measured", "Elia", "temperature", "interval"]
 
@@ -74,3 +74,13 @@ def test_chart_labels_are_not_informative():
 
 def test_short_fragments_are_not_informative():
     assert not is_informative("menu Grid data")
+
+
+def test_number_runs_are_removed():
+    axis = "Elia grid load 00 01 02 03 04 05 0 2000 4000 6000 Legend"
+    assert strip_number_runs(axis).split() == ["Elia", "grid", "load", "Legend"]
+
+
+def test_short_number_groups_are_kept():
+    text = "Between 2020 and 2022, MAPE fell from 3.75 to 3.22 percent."
+    assert strip_number_runs(text) == text

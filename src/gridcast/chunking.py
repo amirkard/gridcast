@@ -1,5 +1,10 @@
 """Split document text into overlapping chunks for retrieval."""
 
+import re
+
+# Four or more number-like tokens in a row: chart axes, tick labels, table grids.
+_NUMBER_RUN = re.compile(r"(?<!\S)(?:\d[\d.,:/-]*\s+){3,}\d[\d.,:/-]*(?!\S)")
+
 
 def _normalize(text: str) -> str:
     """Collapse whitespace inside paragraphs and keep blank lines between them."""
@@ -60,3 +65,13 @@ def is_informative(chunk: str, min_letter_ratio: float = 0.5, min_words: int = 8
     letters = sum(c.isalpha() for c in chars)
     words = [w for w in chunk.split() if sum(c.isalpha() for c in w) >= 3]
     return letters / len(chars) >= min_letter_ratio and len(words) >= min_words
+
+
+def strip_number_runs(text: str) -> str:
+    """Remove runs of four or more number-like tokens, such as chart axis labels.
+
+    Text extracted from a web page saved as PDF contains axis ticks like
+    "00 01 02 03 ... 2000 4000 6000". They carry no meaning for retrieval, but
+    they make a chunk look like a match for many queries.
+    """
+    return _NUMBER_RUN.sub(" ", text)

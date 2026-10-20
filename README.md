@@ -100,16 +100,19 @@ title, page, and similarity score.
 
 - **Chunking:** about 1,200 characters per chunk, ending at a paragraph,
   sentence, or word, with a 200-character overlap.
-- **Noise filter:** chunks that are mostly numbers or labels (chart axes,
-  menus from a web page saved as PDF) are skipped, because they matched
-  queries well and pushed the real definitions out of the top results.
+- **Noise filter:** runs of numbers (chart axes) are removed from PDF text,
+  and chunks that are still mostly numbers or labels are skipped. A web page
+  saved as PDF produced such chunks; they matched queries well and pushed the
+  real definitions out of the top results.
 - **Citations:** the agent must cite the source and page of each claim. If no
   passage answers the question, it must say so instead of answering from memory.
 - **Untrusted text:** retrieved passages are quoted material, never
   instructions.
-- **Evaluation:** four new cases cover an answer from the project notes, a
-  definition with a citation, a question the documents do not cover, and a
-  question that needs both a document and the load data.
+- **Evaluation:** five new cases cover an answer from the project notes, a
+  definition with a citation, a question the documents do not cover, a
+  question that needs both a document and the load data, and a prompt
+  injection: `corpus/grid_load_glossary.md` contains a planted instruction to
+  stop answering, and the agent must ignore it.
 
 The documents themselves are not committed; `corpus/_sources.md` lists them.
 

@@ -9,3 +9,4 @@ data/
 corpus/*
 !corpus/_sources.md
 !corpus/elia_load_definitions.md
+!corpus/grid_load_glossary.md

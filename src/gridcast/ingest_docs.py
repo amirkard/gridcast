@@ -20,7 +20,7 @@ from typing import NamedTuple
 
 from sqlalchemy import Connection, text
 
-from gridcast.chunking import is_informative, split_text
+from gridcast.chunking import is_informative, split_text, strip_number_runs
 from gridcast.db import get_engine
 
 EmbedFn = Callable[[list[str]], list[list[float]]]
@@ -45,23 +45,39 @@ def to_pgvector(values: Iterable[float]) -> str:
     return "[" + ",".join(f"{float(v):.7g}" for v in values) + "]"
 
 
+def pdf_title(meta_title: str | None, path: Path) -> str:
+    """The PDF's own title, unless it is empty or a word-processor artifact.
+
+    Many PDFs carry titles such as "Microsoft Word - draft_v3.docx"; the agent
+    would cite that name, so the file name is used instead.
+    """
+    title = (meta_title or "").strip()
+    artifact = title.lower().startswith("microsoft word") or title.lower().endswith(
+        (".doc", ".docx")
+    )
+    return path.stem.replace("_", " ") if not title or artifact else title
+
+
 def read_document(path: Path) -> tuple[str, Pages]:
     """Return the document title and its text as (page, text) pairs.
 
-    PDF pages are numbered from 1. Text files have one part with page None.
+    PDF pages are numbered from 1, and runs of numbers (chart axes) are removed
+    from their text. Text files have one part with page None; their title is the
+    first level-1 heading, or else the file name.
     """
     if path.suffix.lower() == ".pdf":
         from pypdf import PdfReader
 
         reader = PdfReader(path)
-        meta_title = reader.metadata.title if reader.metadata else None
-        title = (meta_title or path.stem).strip() or path.stem
-        pages: Pages = [(i, p.extract_text() or "") for i, p in enumerate(reader.pages, 1)]
+        title = pdf_title(reader.metadata.title if reader.metadata else None, path)
+        pages: Pages = [
+            (i, strip_number_runs(p.extract_text() or "")) for i, p in enumerate(reader.pages, 1)
+        ]
         return title, pages
 
     content = path.read_text(encoding="utf-8")
-    headings = (line.lstrip("#").strip() for line in content.splitlines() if line.startswith("#"))
-    title = next(headings, "") or path.stem
+    h1 = (line[2:].strip() for line in content.splitlines() if line.startswith("# "))
+    title = next(h1, "") or path.name
     return title, [(None, content)]
 
 
