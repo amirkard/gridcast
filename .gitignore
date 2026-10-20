@@ -4,3 +4,7 @@ __pycache__/
 .env
 data/
 .pytest_cache/
+
+# Retrieval documents: only the source list is committed
+corpus/*
+!corpus/_sources.md
