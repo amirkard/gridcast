@@ -20,6 +20,8 @@ def grade(case: dict, result: dict) -> dict:
 
     if "expect_tool" in case:
         checks["tool"] = case["expect_tool"] in names
+    for tool in case.get("expect_tools", []):
+        checks[f"tool:{tool}"] = tool in names
 
     if case.get("expect_args"):
         got = result["tool_calls"][0]["input"] if result["tool_calls"] else {}
@@ -37,6 +39,8 @@ def grade(case: dict, result: dict) -> dict:
         checks["any_of"] = any(
             str(p).lower() in answer for p in case["must_contain_any"]
         )
+    if case.get("cite_any"):
+        checks["cites"] = any(str(p).lower() in answer for p in case["cite_any"])
     for phrase in case.get("must_not_contain", []):
         checks[f"not:{phrase}"] = str(phrase).lower() not in answer
 

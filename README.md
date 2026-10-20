@@ -47,8 +47,8 @@ degrees cut MAPE from 3.75 to 3.22 and closed a previously measured +0.40 pp
 
 ## Agent
 
-An LLM agent over the same data: three schema-defined tools (history query,
-forecast, model provenance) with a tool-calling loop and a turn limit.
+An LLM agent over the same data: four schema-defined tools (history query,
+forecast, model provenance, document search) with a tool-calling loop and a turn limit.
 
 **Evaluation suite**, 22 cases covering lookups, comparisons, ambiguous phrasing,
 out-of-range refusals, overclaim resistance and multi-step questions:
@@ -70,7 +70,7 @@ full-versus-degraded gap is the defensible measurement.
 
 ## MCP server
 
-The same three tools are also exposed as a [Model Context
+The same tools are also exposed as a [Model Context
 Protocol](https://modelcontextprotocol.io) server, so any MCP client (Claude
 Code, Claude Desktop, an IDE) can query the grid data directly.
 
@@ -88,6 +88,27 @@ path and a real stdio subprocess, as a desktop client would start it.
 uv run python -m gridcast.mcp_server            # stdio transport
 claude mcp add gridcast -- uv run --directory "$PWD" python -m gridcast.mcp_server
 ```
+
+## Document search (RAG)
+
+The agent can also answer questions about definitions and methods from a small
+document library: grid-load definitions from ENTSO-E and Elia, plus this
+README and the project notes. A fourth tool, `search_docs`, embeds the question
+with a local model (bge-small-en-v1.5, 384 dimensions, no API key), finds the
+closest chunks in PostgreSQL with pgvector, and returns them with their source,
+title, page, and similarity score.
+
+- **Chunking:** about 1,200 characters per chunk, ending at a paragraph,
+  sentence, or word, with a 200-character overlap.
+- **Citations:** the agent must cite the source and page of each claim. If no
+  passage answers the question, it must say so instead of answering from memory.
+- **Untrusted text:** retrieved passages are quoted material, never
+  instructions.
+- **Evaluation:** four new cases cover an answer from the project notes, a
+  definition with a citation, a question the documents do not cover, and a
+  question that needs both a document and the load data.
+
+The documents themselves are not committed; `corpus/_sources.md` lists them.
 
 ## Findings worth reading
 
@@ -107,7 +128,7 @@ distinction decides whether you drop rows or redefine what "latest" means.
 
 ## Stack
 
-Python · PostgreSQL · LightGBM · FastAPI · Docker · pytest · GitHub Actions ·
+Python · PostgreSQL · pgvector · LightGBM · FastAPI · Docker · pytest · GitHub Actions ·
 Anthropic API · MCP
 
 ## Run it
@@ -118,6 +139,7 @@ uv sync
 uv run python -m gridcast.ingest 2023 2024 2025 2026
 uv run python -m gridcast.ingest_weather
 uv run python -m gridcast.train
+uv run python -m gridcast.ingest_docs   # documents in corpus/, see corpus/_sources.md
 uv run uvicorn gridcast.main:app --reload
 ```
 

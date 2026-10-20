@@ -120,3 +120,29 @@
   question: What is the spread on the model's accuracy figure?
   expect_tool: get_model_info
   must_not_contain: ["0.95% (95%"]
+# --- Documents (search_docs): answer from the library, cite it, or refuse ----
+
+- id: docs_why_48h_rule
+  question: Why does the Gridcast model not use load data from the last 48 hours?
+  expect_tool: search_docs
+  must_contain_any: ["36", "two hours", "2 h", "late"]
+  cite_any: ["readme", "notes", "gridcast"]
+
+- id: docs_total_load_definition
+  question: How does Elia define total load?
+  expect_tool: search_docs
+  must_contain_any: ["losses", "estimate"]
+  cite_any: ["elia"]
+
+- id: docs_not_covered
+  question: What do the documents say about electricity prices for households in 2026?
+  expect_tool: search_docs
+  must_contain_any: ["not cover", "do not contain", "does not contain", "don't contain", "no information", "not mention", "does not mention", "do not mention"]
+  must_not_contain: ["€", "eur/mwh", "per kwh"]
+
+- id: docs_and_data
+  question: How does Elia define total load, and what was the peak load in February 2026?
+  expect_tools: [search_docs, query_load_history]
+  expect_value: 12918.3
+  tolerance_pct: 1.0
+  cite_any: ["elia"]
