@@ -5,17 +5,22 @@ Usage:
     uv run python -m gridcast.ingest_docs corpus/x.pdf    # specific files or folders
 
 Re-running replaces the chunks of each document, so the table always matches
-the files. Supported formats: .md, .txt, .pdf. Files whose names start with "_"
-are skipped (corpus/_sources.md lists the documents to download).
+the files. A run without arguments also removes the chunks of documents that
+are no longer there. Chunks that are mostly numbers or labels (chart axes,
+menus) are skipped as noise.
+
+Supported formats: .md, .txt, and .pdf. Files whose names start with "_" are
+skipped (corpus/_sources.md lists the documents to download).
 """
 
 import sys
 from collections.abc import Callable, Iterable
 from pathlib import Path
+from typing import NamedTuple
 
 from sqlalchemy import Connection, text
 
-from gridcast.chunking import split_text
+from gridcast.chunking import is_informative, split_text
 from gridcast.db import get_engine
 
 EmbedFn = Callable[[list[str]], list[list[float]]]
@@ -28,6 +33,11 @@ INSERT = text(
     "insert into doc_chunks (source, title, page, chunk_index, content, embedding) "
     "values (:source, :title, :page, :chunk_index, :content, cast(:embedding as vector))"
 )
+
+
+class IngestResult(NamedTuple):
+    stored: int   # chunks written to doc_chunks
+    skipped: int  # chunks dropped as noise (numbers, labels, menus)
 
 
 def to_pgvector(values: Iterable[float]) -> str:
@@ -57,12 +67,14 @@ def read_document(path: Path) -> tuple[str, Pages]:
 
 def ingest_document(
     conn: Connection, source: str, title: str, pages: Pages, embed: EmbedFn
-) -> int:
-    """Replace the chunks of one source. Returns the number of chunks stored."""
-    pieces = [(page, piece) for page, body in pages for piece in split_text(body)]
+) -> IngestResult:
+    """Replace the chunks of one source, without the chunks that are only noise."""
+    all_pieces = [(page, piece) for page, body in pages for piece in split_text(body)]
+    pieces = [(page, piece) for page, piece in all_pieces if is_informative(piece)]
+    skipped = len(all_pieces) - len(pieces)
     conn.execute(text("delete from doc_chunks where source = :source"), {"source": source})
     if not pieces:
-        return 0
+        return IngestResult(0, skipped)
 
     vectors = embed([piece for _, piece in pieces])
     rows = [
@@ -77,7 +89,22 @@ def ingest_document(
         for i, ((page, piece), vector) in enumerate(zip(pieces, vectors, strict=True))
     ]
     conn.execute(INSERT, rows)
-    return len(rows)
+    return IngestResult(len(rows), skipped)
+
+
+def prune(conn: Connection, keep: Iterable[str]) -> int:
+    """Delete the chunks of documents that are no longer in the library.
+
+    Test rows (source starting with "test://") are never touched.
+    """
+    result = conn.execute(
+        text(
+            "delete from doc_chunks "
+            "where source <> all(cast(:keep as text[])) and source not like 'test://%'"
+        ),
+        {"keep": list(keep)},
+    )
+    return result.rowcount
 
 
 def find_files(paths: Iterable[str]) -> list[Path]:
@@ -105,9 +132,14 @@ def main(argv: list[str]) -> int:
     with get_engine().begin() as conn:
         for path in files:
             title, pages = read_document(path)
-            n = ingest_document(conn, path.as_posix(), title, pages, embed_passages)
-            total += n
-            print(f"{n:5d} chunks  {path.as_posix()}  ({title})")
+            result = ingest_document(conn, path.as_posix(), title, pages, embed_passages)
+            total += result.stored
+            noise = f", {result.skipped} skipped as noise" if result.skipped else ""
+            print(f"{result.stored:5d} chunks  {path.as_posix()}  ({title}{noise})")
+        if not argv[1:]:
+            removed = prune(conn, [p.as_posix() for p in files])
+            if removed:
+                print(f"{removed:5d} chunks removed from documents no longer in the library")
     print(f"{total:5d} chunks in total")
     return 0
 

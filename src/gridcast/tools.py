@@ -1,6 +1,8 @@
 """Tools the agent can call. Each returns plain JSON-serialisable data."""
 
 
+from datetime import UTC
+
 import pandas as pd
 from sqlalchemy import text
 
@@ -83,6 +85,13 @@ TOOLS = [
 AGGREGATES = ("hourly", "daily", "summary")
 
 
+def _latest(table: str) -> str:
+    """Last timestamp in a table as 'YYYY-MM-DD HH:MM UTC', or 'nothing loaded'."""
+    with get_engine().connect() as c:
+        ts = c.execute(text(f"select max(ts) from {table}")).scalar()
+    return ts.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC") if ts else "nothing loaded"
+
+
 def query_load_history(start: str, end: str, aggregate: str) -> dict:
     if aggregate not in AGGREGATES:
         return {"error": f"aggregate must be one of {', '.join(AGGREGATES)}, not {aggregate!r}"}
@@ -125,7 +134,10 @@ def query_load_history(start: str, end: str, aggregate: str) -> dict:
         df = pd.read_sql(text(sql), c, params={"s": start, "e": end})
 
     if df.empty or (aggregate == "summary" and int(df.iloc[0]["intervals"]) == 0):
-        return {"error": f"no measured data between {start} and {end}"}
+        return {
+            "error": f"no measured data between {start} and {end}; "
+            f"measured data currently ends at {_latest('load_actual')}"
+        }
 
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]) or df[col].dtype == object:
@@ -148,7 +160,12 @@ def get_forecast(hours: int) -> dict:
         df = pd.read_sql(text(sql), c, params={"n": hours * 4})
     df = add_calendar(df).dropna(subset=FEATURES)
     if df.empty:
-        return {"error": "no feature rows available"}
+        return {
+            "error": "no forecast possible: the inputs for the coming hours are incomplete. "
+            f"Measured load ends at {_latest('load_actual')}; "
+            f"the weather forecast ends at {_latest('weather_forecast')}. "
+            "Refresh with: python -m gridcast.ingest and python -m gridcast.ingest_weather"
+        }
 
     model = joblib.load(Path("models/model.joblib"))
     df["predicted_mw"] = model.predict(df[FEATURES]).round(1)

@@ -11,7 +11,9 @@ Suggested starting set:
 2. Elia, *Load and load forecasts* (save the web page as PDF from the browser):
    https://elia.be/grid-data/load-and-load-forecasts
 
-README.md and NOTES.md from the repository root are always included.
+README.md and NOTES.md from the repository root are always included, and so is
+elia_load_definitions.md: Elia's definitions, quoted from the web page above,
+because a web page saved as PDF loses folded text and adds menus and chart labels.
 
 Then run:
 

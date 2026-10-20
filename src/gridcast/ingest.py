@@ -1,6 +1,7 @@
 """Ingest Belgian grid load from the Elia open data platform into PostgreSQL."""
 
 import sys
+from datetime import UTC, datetime
 from io import StringIO
 
 import httpx
@@ -109,6 +110,7 @@ def ingest_year(year: int) -> None:
 
 
 if __name__ == "__main__":
-    years = [int(a) for a in sys.argv[1:]] or [2024, 2025]
+    # Without arguments: the current year, to bring the data up to date.
+    years = [int(a) for a in sys.argv[1:]] or [datetime.now(UTC).year]
     for y in years:
         ingest_year(y)

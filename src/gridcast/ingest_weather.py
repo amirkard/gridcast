@@ -1,6 +1,7 @@
-"""Ingest population-weighted Belgian temperature from the Open-Meteo archive."""
+"""Ingest population-weighted Belgian temperature: the Open-Meteo archive and forecast."""
 
 import sys
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pandas as pd
@@ -9,6 +10,8 @@ from sqlalchemy import text
 from gridcast.db import get_engine
 
 ARCHIVE = "https://archive-api.open-meteo.com/v1/archive"
+ARCHIVE_DELAY_DAYS = 5  # the archive publishes measured weather with a few days' delay
+FIRST_DAY = "2022-12-01"
 
 # City, latitude, longitude, weight (roughly proportional to population served)
 CITIES = [
@@ -111,9 +114,21 @@ def load_forecast(df: pd.DataFrame) -> int:
         conn.execute(sql, df.to_dict("records"))
     return len(df)
 
+def archive_start() -> str:
+    """Two days before the last loaded hour, or the first day when the table is empty."""
+    with get_engine().connect() as c:
+        last = c.execute(text("select max(ts) from weather_raw")).scalar()
+    return (last.date() - timedelta(days=2)).isoformat() if last else FIRST_DAY
+
+
 if __name__ == "__main__":
-    start = sys.argv[1] if len(sys.argv) > 1 else "2022-12-01"
-    end = sys.argv[2] if len(sys.argv) > 2 else "2026-10-02"
-    print(f"{start} to {end}:")
-    n = load(fetch(start, end))
-    print(f"  {n} rows written")
+    # Usage: python -m gridcast.ingest_weather [start] [end]
+    # Without arguments: the archive from the last loaded day up to the latest
+    # published day, then the forecast for the coming week.
+    start = sys.argv[1] if len(sys.argv) > 1 else archive_start()
+    default_end = datetime.now(UTC).date() - timedelta(days=ARCHIVE_DELAY_DAYS)
+    end = sys.argv[2] if len(sys.argv) > 2 else default_end.isoformat()
+    print(f"Archive, {start} to {end}:")
+    print(f"  {load(fetch(start, end))} rows written")
+    print("Forecast, past 2 days and next 7 days:")
+    print(f"  {load_forecast(fetch_forecast())} rows written")

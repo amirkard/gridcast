@@ -8,3 +8,4 @@ data/
 # Retrieval documents: only the source list is committed
 corpus/*
 !corpus/_sources.md
+!corpus/elia_load_definitions.md

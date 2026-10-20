@@ -100,6 +100,9 @@ title, page, and similarity score.
 
 - **Chunking:** about 1,200 characters per chunk, ending at a paragraph,
   sentence, or word, with a 200-character overlap.
+- **Noise filter:** chunks that are mostly numbers or labels (chart axes,
+  menus from a web page saved as PDF) are skipped, because they matched
+  queries well and pushed the real definitions out of the top results.
 - **Citations:** the agent must cite the source and page of each claim. If no
   passage answers the question, it must say so instead of answering from memory.
 - **Untrusted text:** retrieved passages are quoted material, never
@@ -141,6 +144,10 @@ uv run python -m gridcast.ingest_weather
 uv run python -m gridcast.train
 uv run python -m gridcast.ingest_docs   # documents in corpus/, see corpus/_sources.md
 uv run uvicorn gridcast.main:app --reload
+
+# Later, to bring the data up to date (current year, latest weather and forecast):
+uv run python -m gridcast.ingest
+uv run python -m gridcast.ingest_weather
 ```
 
 ```bash

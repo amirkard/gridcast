@@ -46,3 +46,17 @@ def split_text(text: str, max_chars: int = 1200, overlap: int = 200) -> list[str
         space = text.find(" ", nxt, end)
         start = space + 1 if space != -1 else nxt
     return chunks
+
+
+def is_informative(chunk: str, min_letter_ratio: float = 0.5, min_words: int = 8) -> bool:
+    """False for chunks that are mostly numbers or labels, such as chart axes or menus.
+
+    A chunk passes when at least `min_letter_ratio` of its non-space characters
+    are letters and it has at least `min_words` words of three or more letters.
+    """
+    chars = [c for c in chunk if not c.isspace()]
+    if not chars:
+        return False
+    letters = sum(c.isalpha() for c in chars)
+    words = [w for w in chunk.split() if sum(c.isalpha() for c in w) >= 3]
+    return letters / len(chars) >= min_letter_ratio and len(words) >= min_words

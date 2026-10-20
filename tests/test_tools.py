@@ -25,6 +25,12 @@ def test_empty_range_returns_error_not_nulls():
     assert "rows" not in out
 
 
+def test_empty_range_error_says_where_data_ends():
+    """The agent once blamed a 'temporary issue' for data that was only out of date."""
+    out = query_load_history("2030-01-01", "2030-01-02", "summary")
+    assert "ends at" in out["error"]
+
+
 def test_equal_dates_rejected():
     """end is exclusive, so start == end is an empty range."""
     out = query_load_history("2025-03-01", "2025-03-01", "summary")

@@ -5,7 +5,7 @@ from itertools import pairwise
 
 import pytest
 
-from gridcast.chunking import split_text
+from gridcast.chunking import is_informative, split_text
 
 WORDS = ["grid", "load", "Belgium", "forecast.", "measured", "Elia", "temperature", "interval"]
 
@@ -62,3 +62,15 @@ def test_consecutive_chunks_overlap():
 def test_overlap_must_be_smaller_than_chunk_size():
     with pytest.raises(ValueError):
         split_text("text", max_chars=100, overlap=100)
+
+
+def test_prose_is_informative():
+    assert is_informative("The total load is an estimate of the total electricity consumption.")
+
+
+def test_chart_labels_are_not_informative():
+    assert not is_informative("Hours MW 00 01 02 03 04 05 06 0 2000 4000 6000 8000 10 000")
+
+
+def test_short_fragments_are_not_informative():
+    assert not is_informative("menu Grid data")
