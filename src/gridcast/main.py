@@ -1,11 +1,13 @@
 import json
+import os
+import secrets
 from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime
 from pathlib import Path
 
 import joblib
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
@@ -26,7 +28,7 @@ async def lifespan(app: FastAPI):
     state["engine"].dispose()
 
 
-app = FastAPI(title="Gridcast", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="Gridcast", version="0.3.0", lifespan=lifespan)
 
 
 class HealthResponse(BaseModel):
@@ -118,4 +120,38 @@ def forecast(hours: int = 24) -> ForecastResponse:
             )
             for row, p in zip(df.itertuples(), preds, strict=True)
         ],
+    )
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+
+
+class AskResponse(BaseModel):
+    answer: str
+    tools: list[str]
+    turns: int
+
+
+@app.post("/ask", response_model=AskResponse)
+def ask(req: AskRequest, x_ask_token: str | None = Header(default=None)) -> AskResponse:
+    """Ask the agent a question in plain language.
+
+    Every call costs LLM tokens, so the endpoint needs the shared token from the
+    ASK_TOKEN environment variable in the X-Ask-Token header. Without ASK_TOKEN
+    set, the endpoint is off.
+    """
+    from gridcast.agent import run
+
+    expected = os.environ.get("ASK_TOKEN")
+    if not expected:
+        raise HTTPException(503, "the /ask endpoint is not enabled on this server")
+    if not x_ask_token or not secrets.compare_digest(x_ask_token, expected):
+        raise HTTPException(401, "missing or wrong X-Ask-Token header")
+
+    result = run(req.question, verbose=False)
+    return AskResponse(
+        answer=result["answer"],
+        tools=[c["name"] for c in result["tool_calls"]],
+        turns=result["turns"],
     )

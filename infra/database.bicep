@@ -5,8 +5,8 @@
 //     --template-file infra/database.bicep \
 //     --parameters adminPassword="$PGPASSWORD" clientIp="$(curl -s https://api.ipify.org)"
 
-@description('Region for the database. If your subscription cannot use West Europe, try northeurope or swedencentral.')
-param location string = resourceGroup().location
+@description('Region for the database. West Europe did not accept new database customers, so North Europe is the default.')
+param location string = 'northeurope'
 
 @description('Administrator user name.')
 param adminUser string = 'gridcast'

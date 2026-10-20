@@ -9,10 +9,17 @@ ENV UV_PYTHON_DOWNLOADS=never
 
 COPY pyproject.toml uv.lock README.md .python-version ./
 COPY src/ ./src/
+COPY models/ ./models/
 
 RUN uv sync --frozen --no-dev
 
 ENV PATH="/app/.venv/bin:$PATH"
+
+# Download the embedding model into the image, so that the first document
+# search in a new container does not wait for a 130 MB download.
+ENV FASTEMBED_CACHE_PATH=/app/.cache/fastembed
+RUN python -c "from gridcast.embeddings import embed_query; embed_query('warm-up')"
+
 EXPOSE 8000
 
 CMD ["uvicorn", "gridcast.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -7,6 +7,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     services:
       postgres:
@@ -42,4 +45,11 @@ jobs:
         run: uv run pytest tests/ -v
 
       - name: Build image
-        run: docker build -t gridcast .
+        run: docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} -t ghcr.io/${{ github.repository }}:latest .
+
+      # Publish only from master, after lint and tests have passed.
+      - name: Publish image to GitHub Container Registry
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push --all-tags ghcr.io/${{ github.repository }}
