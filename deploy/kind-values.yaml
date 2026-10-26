@@ -1,0 +1,15 @@
+# Values for a local kind cluster and for CI. See "Kubernetes" in the README.
+
+# An image built locally and loaded with "kind load docker-image": never pull it.
+image:
+  repository: gridcast
+  tag: local
+  pullPolicy: Never
+
+# PostgreSQL with pgvector in the cluster, instead of a managed database.
+postgres:
+  enabled: true
+
+# No daily download from Elia on a laptop; start the job by hand when needed.
+ingest:
+  suspend: true

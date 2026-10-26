@@ -137,6 +137,50 @@ could not start: LightGBM needs `libgomp1`, which the slim base image lacks.
 The agent is reachable at `POST /ask` with an `X-Ask-Token` header, because
 every call costs LLM tokens.
 
+## Kubernetes
+
+A Helm chart in `deploy/helm/gridcast` runs the same image on any Kubernetes
+cluster:
+
+- **API Deployment** with three probes. Liveness (`/livez`) never touches the
+  database, so a database outage does not restart every pod; readiness
+  (`/health`) does, so a pod that cannot reach the database gets no traffic.
+- **Schema migration** as an init container (`python -m gridcast.migrate`).
+  The SQL files are idempotent and run in one transaction under a PostgreSQL
+  advisory lock, so several pods can start at the same time.
+- **Daily data refresh** as a CronJob: this year's load from Elia, then the
+  latest weather and the weather forecast.
+- **Secrets** from an existing Secret in production (for example, filled from
+  Azure Key Vault by the Secrets Store CSI driver). Only local clusters let the
+  chart create one.
+- **PostgreSQL with pgvector** in the cluster, for local use and CI only. Its
+  generated password is kept on upgrade, because a new one would not match the
+  data on the volume.
+- **Non-root containers** without privilege escalation or Linux capabilities.
+
+Try it on a local cluster with [kind](https://kind.sigs.k8s.io):
+
+```bash
+kind create cluster --name gridcast
+docker build -t gridcast:local .
+kind load docker-image gridcast:local --name gridcast
+helm install gridcast deploy/helm/gridcast -f deploy/kind-values.yaml --wait
+helm test gridcast
+kubectl create job --from=cronjob/gridcast-ingest ingest-now   # load data now
+kubectl port-forward svc/gridcast 8000:8000                    # http://localhost:8000/docs
+```
+
+To enable `POST /ask`, put the keys in a Secret and point the chart at it:
+
+```bash
+kubectl create secret generic gridcast-api \
+  --from-literal=ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" --from-literal=ASK_TOKEN="$ASK_TOKEN"
+helm upgrade gridcast deploy/helm/gridcast -f deploy/kind-values.yaml \
+  --set secrets.existingSecret=gridcast-api --wait
+```
+
+CI installs the chart on a kind cluster on every push and runs `helm test`.
+
 ## Findings worth reading
 
 See [NOTES.md](NOTES.md). Two in particular:
@@ -155,8 +199,8 @@ distinction decides whether you drop rows or redefine what "latest" means.
 
 ## Stack
 
-Python · PostgreSQL · pgvector · LightGBM · FastAPI · Docker · Azure (Container Apps,
-Key Vault, PostgreSQL, Bicep) · pytest · GitHub Actions ·
+Python · PostgreSQL · pgvector · LightGBM · FastAPI · Docker · Kubernetes · Helm ·
+Azure (Container Apps, Key Vault, PostgreSQL, Bicep) · pytest · GitHub Actions ·
 Anthropic API · MCP
 
 ## Run it
@@ -164,6 +208,7 @@ Anthropic API · MCP
 ```bash
 docker compose up -d
 uv sync
+uv run python -m gridcast.migrate
 uv run python -m gridcast.ingest 2023 2024 2025 2026
 uv run python -m gridcast.ingest_weather
 uv run python -m gridcast.train
@@ -181,14 +226,16 @@ uv run pytest tests/ -q          # tool contract tests, no API key needed
 uv run python eval/run_eval.py   # agent evaluation, needs ANTHROPIC_API_KEY
 ```
 
-CI runs lint, the tool tests against a real PostgreSQL service container, and
-the Docker build on every push. The agent evaluation is run manually: it costs
+CI runs lint, the tests against a real PostgreSQL service container, the
+Docker build, a smoke test of the image, and the Helm chart on a kind cluster
+on every push. The agent evaluation is run manually: it costs
 money and is non-deterministic, so it does not belong on every commit.
 
 ## Known limitations
 
 - Measured rather than forecast temperature in the backtest, as noted above.
-- No scheduled ingest; data is refreshed by hand.
+- Scheduled ingest exists only on Kubernetes (the CronJob); the Azure
+  deployment is refreshed by hand.
 - Row-offset lags assume a complete 15-minute grid. `forecast_features` reads
   `load_raw`, which has one, so this holds in serving.
 - The evaluation grader uses substring matching, which produces both false

@@ -30,6 +30,21 @@ def test_health_reports_the_model_version(client):
     assert body["model_version"]
 
 
+def test_livez_does_not_touch_the_database(client, monkeypatch):
+    """Liveness must not fail when the database is down, or Kubernetes restarts every pod."""
+    import gridcast.main as main
+
+    class BrokenEngine:
+        def connect(self):
+            raise RuntimeError("database is down")
+
+        def dispose(self):  # the app's shutdown calls this
+            pass
+
+    monkeypatch.setitem(main.state, "engine", BrokenEngine())
+    assert client.get("/livez").json() == {"status": "alive"}
+
+
 def test_ask_is_off_without_a_configured_token(client, monkeypatch):
     """Every call costs money, so no token on the server means no endpoint."""
     monkeypatch.delenv("ASK_TOKEN", raising=False)

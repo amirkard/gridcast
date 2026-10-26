@@ -1,0 +1,34 @@
+# helm test: call /health through the Service. A 200 with a model version
+# means the image starts, the migrations ran (/health reads the schema), and
+# the Service reaches the pods. Uses the app image, so no extra image is pulled.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "gridcast.fullname" . }}-test-health
+  labels:
+    {{- include "gridcast.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  restartPolicy: Never
+  securityContext:
+    {{- include "gridcast.podSecurityContext" . | nindent 4 }}
+  containers:
+    - name: health
+      image: {{ include "gridcast.image" . }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command:
+        - python
+        - -c
+        - |
+          import httpx
+          r = httpx.get("http://{{ include "gridcast.fullname" . }}:{{ .Values.service.port }}/health", timeout=10)
+          r.raise_for_status()
+          body = r.json()
+          assert body["status"] == "ok", body
+          assert body["model_version"], body
+          print("health ok:", body)
+      securityContext:
+        {{- include "gridcast.containerSecurityContext" . | nindent 8 }}

@@ -1,0 +1,45 @@
+{{- if .Values.ingest.enabled }}
+# Daily data refresh: this year's grid load, then the latest weather and the
+# weather forecast. Both steps are incremental and safe to repeat.
+# Run it now:  kubectl create job --from=cronjob/{{ include "gridcast.fullname" . }}-ingest ingest-now
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "gridcast.fullname" . }}-ingest
+  labels:
+    {{- include "gridcast.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingest
+spec:
+  schedule: {{ .Values.ingest.schedule | quote }}
+  {{- with .Values.ingest.timeZone }}
+  timeZone: {{ . | quote }}
+  {{- end }}
+  suspend: {{ .Values.ingest.suspend }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            {{- include "gridcast.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: ingest
+        spec:
+          restartPolicy: Never
+          securityContext:
+            {{- include "gridcast.podSecurityContext" . | nindent 12 }}
+          containers:
+            - name: ingest
+              image: {{ include "gridcast.image" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["sh", "-c", "python -m gridcast.ingest && python -m gridcast.ingest_weather"]
+              env:
+                {{- include "gridcast.databaseEnv" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.ingest.resources | nindent 16 }}
+              securityContext:
+                {{- include "gridcast.containerSecurityContext" . | nindent 16 }}
+{{- end }}

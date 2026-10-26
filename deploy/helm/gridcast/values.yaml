@@ -1,0 +1,74 @@
+# Default values for the Gridcast chart.
+# deploy/kind-values.yaml overrides some of them for a local cluster.
+
+image:
+  repository: ghcr.io/amirkard/gridcast
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+# Secrets for the API.
+#
+# Production: create the Secret outside the chart (for example, with the Azure
+# Key Vault provider for the Secrets Store CSI driver) and give its name in
+# existingSecret. Its keys:
+#   DATABASE_URL       required, unless postgres.enabled
+#   ANTHROPIC_API_KEY  optional; without it and ASK_TOKEN, POST /ask is off
+#   ASK_TOKEN          optional
+#
+# Local clusters only: set create to true, and the chart makes the Secret from
+# the values below. Values given with --set can stay in the shell history.
+secrets:
+  existingSecret: ""
+  create: false
+  databaseUrl: ""
+  anthropicApiKey: ""
+  askToken: ""
+
+# PostgreSQL with pgvector inside the cluster, for local clusters and CI.
+# Production uses a managed database: keep this false and set DATABASE_URL.
+# The password is generated on install and kept on upgrade.
+postgres:
+  enabled: false
+  image: pgvector/pgvector:pg16
+  user: gridcast
+  database: gridcast
+  storage: 2Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+# Daily refresh of grid load (Elia) and weather (Open-Meteo) data.
+ingest:
+  enabled: true
+  schedule: "30 7 * * *"
+  timeZone: Europe/Brussels
+  suspend: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+# Needs a metrics server in the cluster.
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70

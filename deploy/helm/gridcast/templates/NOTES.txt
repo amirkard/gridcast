@@ -1,0 +1,12 @@
+Gridcast is installed as release {{ .Release.Name }}.
+
+Check it:
+  helm test {{ .Release.Name }}
+
+Open the API on http://localhost:8000/docs:
+  kubectl port-forward svc/{{ include "gridcast.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+{{- if .Values.ingest.enabled }}
+
+Load data now, instead of waiting for the schedule ({{ .Values.ingest.schedule }}):
+  kubectl create job --from=cronjob/{{ include "gridcast.fullname" . }}-ingest ingest-now
+{{- end }}

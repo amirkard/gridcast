@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gridcast.fullname" . }}
+  labels:
+    {{- include "gridcast.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "gridcast.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        {{- include "gridcast.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+      annotations:
+        # A changed secret restarts the pods, so that they read the new values.
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+        {{- include "gridcast.podSecurityContext" . | nindent 8 }}
+      initContainers:
+        # Apply the schema before the API starts. Idempotent, and safe when
+        # several pods start at once (advisory lock in gridcast.migrate).
+        - name: migrate
+          image: {{ include "gridcast.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "gridcast.migrate"]
+          env:
+            {{- include "gridcast.databaseEnv" . | nindent 12 }}
+          securityContext:
+            {{- include "gridcast.containerSecurityContext" . | nindent 12 }}
+      containers:
+        - name: api
+          image: {{ include "gridcast.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            {{- include "gridcast.databaseEnv" . | nindent 12 }}
+            # Optional: without them, POST /ask answers 503 and costs nothing.
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gridcast.secretName" . }}
+                  key: ANTHROPIC_API_KEY
+                  optional: true
+            - name: ASK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gridcast.secretName" . }}
+                  key: ASK_TOKEN
+                  optional: true
+          # The model loads at start; give it time before liveness counts.
+          startupProbe:
+            httpGet:
+              path: /livez
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          # Liveness never touches the database: an outage must not restart pods.
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: http
+            periodSeconds: 10
+          # Readiness does: no traffic to a pod that cannot reach the database.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- include "gridcast.containerSecurityContext" . | nindent 12 }}

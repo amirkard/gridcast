@@ -52,6 +52,17 @@ class ForecastResponse(BaseModel):
     points: list[ForecastPoint]
 
 
+@app.get("/livez")
+def livez() -> dict:
+    """Liveness: the process answers. No database call.
+
+    Kubernetes restarts a container whose liveness probe fails. If this probe
+    used the database, a database outage would restart every API pod, which
+    does not help. /health checks the database and is the readiness probe.
+    """
+    return {"status": "alive"}
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     with state["engine"].connect() as c:

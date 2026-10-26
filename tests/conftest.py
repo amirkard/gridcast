@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 from sqlalchemy import text
 
+from gridcast import migrate
 from gridcast.db import get_engine
 
-SQL_DIR = Path("sql")
 FIXTURES = Path("tests/fixtures")
 
 
@@ -24,9 +24,8 @@ def _already_loaded(conn) -> bool:
 def database():
     engine = get_engine()
 
-    with engine.begin() as conn:
-        for path in sorted(SQL_DIR.glob("*.sql")):
-            conn.execute(text(path.read_text()))
+    # The same code path as the Kubernetes init container.
+    migrate.apply(engine)
 
     with engine.connect() as conn:
         if _already_loaded(conn):

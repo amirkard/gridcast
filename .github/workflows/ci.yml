@@ -60,7 +60,40 @@ jobs:
           docker logs smoke
           exit 1
 
-      # Publish only from master, after lint, tests, and the smoke test have passed.
+      # The image runs as an unprivileged user; document search must still
+      # load the embedding model that the build put into the image.
+      - name: Check document search works as the image user
+        run: docker exec smoke python -c "from gridcast.embeddings import embed_query; assert len(embed_query('total load')) == 384"
+
+      # Install the Helm chart on a throwaway Kubernetes cluster and run its
+      # test: the migration init container, the probes, the in-cluster
+      # database, and the Service must all work.
+      - name: Create a kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: gridcast
+
+      - name: Lint the Helm chart
+        run: helm lint deploy/helm/gridcast -f deploy/kind-values.yaml
+
+      - name: Install the chart and run its test
+        run: |
+          kind load docker-image ghcr.io/${{ github.repository }}:${{ github.sha }} --name gridcast
+          helm install gridcast deploy/helm/gridcast -f deploy/kind-values.yaml \
+            --set image.repository=ghcr.io/${{ github.repository }} \
+            --set image.tag=${{ github.sha }} \
+            --wait --timeout 5m
+          helm test gridcast --logs
+
+      - name: Show the cluster state
+        if: failure()
+        run: |
+          kubectl get all,pvc
+          kubectl describe pods
+          kubectl logs -l app.kubernetes.io/instance=gridcast --all-containers --tail=100
+
+      # Publish only from master, after lint, tests, the smoke test, and the
+      # Kubernetes test have passed.
       - name: Publish image to GitHub Container Registry
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: |

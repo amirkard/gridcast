@@ -1,0 +1,6 @@
+apiVersion: v2
+name: gridcast
+description: Belgian grid load forecasting API with an LLM agent, a database migration step, and a daily data refresh.
+type: application
+version: 0.1.0
+appVersion: "0.3.0"
