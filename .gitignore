@@ -14,3 +14,8 @@ corpus/*
 # Local secrets for Azure (never commit)
 .env.*
 *.dump
+
+# MLflow tracking store and artifacts (local runs)
+mlflow.db
+mlruns/
+mlartifacts/

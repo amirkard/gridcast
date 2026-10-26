@@ -7,9 +7,13 @@ from pathlib import Path
 import joblib
 import lightgbm as lgb
 
+from gridcast import tracking
 from gridcast.features import FEATURES, build
 
 MODEL_DIR = Path("models")
+
+# The one definition of the model's hyperparameters. backtest.py uses it too,
+# so the model that was evaluated is the model that is deployed.
 PARAMS = {
     "n_estimators": 600,
     "learning_rate": 0.05,
@@ -22,14 +26,39 @@ PARAMS = {
 
 
 def main() -> None:
-    df = build()
-    model = lgb.LGBMRegressor(**PARAMS).fit(df[FEATURES], df["load_mw"])
-
     version = f"lgbm-{datetime.now(UTC):%Y%m%d}"
-    MODEL_DIR.mkdir(exist_ok=True)
-    joblib.dump(model, MODEL_DIR / "model.joblib")
+    with tracking.run("gridcast-train", version) as active:
+        df = build()
+        model = lgb.LGBMRegressor(**PARAMS).fit(df[FEATURES], df["load_mw"])
+        meta = metadata(df, version)
+        # The model file names the run that made it, and the run holds the file.
+        meta["mlflow_run_id"] = active.info.run_id if active else None
 
-    meta = {
+        MODEL_DIR.mkdir(exist_ok=True)
+        joblib.dump(model, MODEL_DIR / "model.joblib")
+        (MODEL_DIR / "metadata.json").write_text(json.dumps(meta, indent=2))
+
+        ev = meta["evaluation"]
+        tracking.log(
+            params={**PARAMS, "n_features": len(FEATURES), "n_rows": len(df)},
+            metrics={
+                "backtest_mape_pct": ev["model_mape_pct"],
+                "baseline_mape_pct": ev["baseline_mape_pct"],
+                "paired_difference_pp": ev["paired_difference_pp"],
+            },
+            tags={
+                "model_version": version,
+                "train_start": meta["train_start"],
+                "train_end": meta["train_end"],
+            },
+        )
+        tracking.artifact(MODEL_DIR / "model.joblib")
+        tracking.artifact(MODEL_DIR / "metadata.json")
+    print(f"Saved {version}: {len(df)} rows, {len(FEATURES)} features")
+
+
+def metadata(df, version: str) -> dict:
+    return {
         "version": version,
         "trained_at": datetime.now(UTC).isoformat(),
         "n_rows": len(df),
@@ -59,8 +88,6 @@ def main() -> None:
             ),
         },
     }
-    (MODEL_DIR / "metadata.json").write_text(json.dumps(meta, indent=2))
-    print(f"Saved {version}: {len(df)} rows, {len(FEATURES)} features")
 
 
 if __name__ == "__main__":

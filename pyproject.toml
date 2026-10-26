@@ -40,6 +40,14 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.10",
+    { include-group = "tracking" },
+]
+# Experiment tracking for training and backtests; not in the API image.
+# mlflow-skinny keeps the dependency set small; alembic is for the SQLite store.
+# The MLflow web UI runs in its own environment: see gridcast/tracking.py.
+tracking = [
+    "mlflow-skinny>=3",
+    "alembic>=1.13",
 ]
 
 [tool.ruff]

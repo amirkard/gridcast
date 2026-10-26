@@ -181,6 +181,28 @@ helm upgrade gridcast deploy/helm/gridcast -f deploy/kind-values.yaml \
 
 CI installs the chart on a kind cluster on every push and runs `helm test`.
 
+## Experiment tracking
+
+Backtests and training runs log to MLflow (`gridcast.tracking`):
+
+- **Backtest** (`python -m gridcast.backtest`): the fold setup, the model
+  parameters, the mean and spread of each model's error, the error of every
+  fold as a series, the paired comparisons with their confidence intervals,
+  and `results/backtest.csv`.
+- **Training** (`python -m gridcast.train`): the parameters, the data window,
+  the evaluation numbers, the commit, and the model file with its metadata.
+  `models/metadata.json` records the MLflow run ID, so a deployed model leads
+  back to the run that made it.
+
+Both use one definition of the LightGBM parameters (`train.PARAMS`), so the
+model that was evaluated is the model that is deployed. Tracking is optional:
+without MLflow, or with `GRIDCAST_TRACKING=off`, both scripts run as before.
+
+```bash
+uv run python -m gridcast.backtest
+uvx mlflow ui --backend-store-uri sqlite:///mlflow.db   # http://localhost:5000
+```
+
 ## Findings worth reading
 
 See [NOTES.md](NOTES.md). Two in particular:
@@ -199,7 +221,7 @@ distinction decides whether you drop rows or redefine what "latest" means.
 
 ## Stack
 
-Python · PostgreSQL · pgvector · LightGBM · FastAPI · Docker · Kubernetes · Helm ·
+Python · PostgreSQL · pgvector · LightGBM · MLflow · FastAPI · Docker · Kubernetes · Helm ·
 Azure (Container Apps, Key Vault, PostgreSQL, Bicep) · pytest · GitHub Actions ·
 Anthropic API · MCP
 
